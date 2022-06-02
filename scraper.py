@@ -31,7 +31,7 @@ test_p=""" In the late 1950s, Dunstan became well known for his campaign against
 def format_paragraphs(soup):
     """ Formats the HTML to the desired output """
     def form_string(str1,str2):
-        return "[Original]:" + str1 +"[Punctuated]:" +str2 + "###" + "\n\n" + "<|endoftext|>" +"\n"
+        return "[Original]:" + str1 +"[Punctuated]:" +str2 + "###" +"\n"  + "<|endoftext|> ""\n\n" 
 
     
     paragaphs=soup.find_all('p')
