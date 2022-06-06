@@ -35,35 +35,44 @@ def scrape_page(page_url):
 def find_chunks(soup):
     """ Finds the chunks of paragraphs and formats each paragraph """
     def form_string(str1,str2):
-        return "[Original]: " + str1 +'\n'+"[Punctuated]: " +str2.rstrip('\n') + " ###" +"\n" + "<|endoftext|> "+"\n\n" 
+        
+        return  "[Original]: " +''.join(str1)+'\n' +"[Punctuated]: "+''.join(str2).rstrip('\n')+ " ###" +"\n" + "<|endoftext|> "+"\n\n" 
+        
+           
     chunks=[]
     paragraphs=[]
     main=soup.find('div',class_="mw-parser-output")
     toc=soup.find('div',class_='toc')
-
+    #print(main.prettify())
     first_chunk=toc.find_previous_siblings('p')
-    first_chunk.pop()
     first_chunk.reverse()
     headings=main.find_all('h2')
     headings.pop(0)
-    headings.pop(-1)
+    headings.pop(-1) #remove references
+    #print(first_chunk)
     chunks.append(first_chunk)
     for h in headings:
         span=h.find('span')
         if  not span['id']=='External_links':
             chunks.append(h.find_next_siblings('p'))
-    def format_chunks(chunk):    
+    chunks.pop(-1)
+    chunks.pop(-1)
+    def format_chunks(chunk): 
+        punctuated_chunk=[]   
+        original_chunk=[]    
         for p in chunk:
             if (not p.attrs=='class') and len(p.get_text())>2 :
-                print(p)
                 p_text=p.get_text()
-                punctuated=re.sub("\[(.*?)\]",'',p_text)
+                punctuated=re.sub("\[(.*?)\]",'',p_text) + '\n'
                 original=p_text.casefold().rstrip('\n')        
                 new_o=re.sub(r'[^\w\s]', '',original) #remove punctuation
                 formatted=re.sub("\[(.*?)\]",'',new_o) #remove citations
-                text=form_string(formatted,punctuated)
-                paragraphs.append(text)
+                original_chunk.append(formatted.rstrip('\n'))
+                punctuated_chunk.append(punctuated)
 
+        text=form_string(original_chunk,punctuated_chunk)
+        paragraphs.append(text)
+    #print(chunks)
     for c in chunks:
         format_chunks(c)
     return paragraphs
@@ -72,10 +81,11 @@ output=[]
 with open( r'input_file.txt','r',) as i:
     """Read URLs, Scrape the Pages,  """
     urls=i.readlines()
-    
     for url in urls:
         my_url=url.rstrip() #remove '\n' from url
+        print(my_url)
         page=scrape_page(my_url)
+        #print(page.prettify())
         output.append(find_chunks(page))   
 
 
