@@ -2,27 +2,6 @@ from bs4 import BeautifulSoup
 import requests
 import re
 
-""" 
-open input txt file
-find urls
-open site form url
-parse html
-find all paragraphs that have <h3> or <h2> as an immediate sibling
-format the paragraphs:
-    lowercase
-    remove punctuation and citations except  '
-write paragraphs to txt file
-
-"""
-
-test_p=""" In the late 1950s, Dunstan became well known for his campaign against the death penalty being imposed on Max Stuart, who was convicted of rape and murder of a small girl, opposing then-Premier Thomas Playford IV over the matter. During Labor's time in opposition, Dunstan was prominent in securing some reforms in Aboriginal rights and in Labor abandoning the White Australia policy."""
-"""
-desired output: [Original]: in the late 1950s dunstan became well known for his campaign against the death penalty being imposed on max stuart who was convicted of rape and murder of a small girl opposing thenpremier thomas playford iv over the matter during labor's time in opposition dunstan was prominent in securing some reforms in aboriginal rights and in labor abandoning the white australia policy dunstan became attorneygeneral after the 1965 election and replaced the older frank walsh as premier in 1967 despite maintaining a much larger vote over the liberal and country league lcl labor lost two seats at the 1968 election with the lcl forming government with support of an independent dunstan responded by increasing his attacks on the playmander convincing the lcl into watering down the malapportionment with little change in labor's vote but with the playmander removed labor won 27 of 47 seats at the 1970 election and again in 1973 1975 and 1977 
-                [Punctuated]: In the late 1950s, Dunstan became well known for his campaign against the death penalty being imposed on Max Stuart, who was convicted of rape and murder of a small girl, opposing then-Premier Thomas Playford IV over the matter. During Labor's time in opposition, Dunstan was prominent in securing some reforms in Aboriginal rights and in Labor abandoning the White Australia policy.. ### 
-"""
-
-
-
 def scrape_page(page_url):
     """Extracts HTML from a webpage"""
     
@@ -32,36 +11,48 @@ def scrape_page(page_url):
     soup.encode('utf-8')
     return soup
 
+def form_string(str1,str2):
+    """ Forms the output string """   
+    return  "[Original]: " +''.join(str1)+'\n' +"[Punctuated]: "+''.join(str2).rstrip('\n')+ " ###" +"\n" + "<|endoftext|> "+"\n\n" 
+
 def find_chunks(soup):
-    """ Finds the chunks of paragraphs and formats each paragraph """
-    def form_string(str1,str2):
-        
-        return  "[Original]: " +''.join(str1)+'\n' +"[Punctuated]: "+''.join(str2).rstrip('\n')+ " ###" +"\n" + "<|endoftext|> "+"\n\n" 
-        
-           
+    """ Finds the chunks of paragraphs and formats each paragraph """    
     chunks=[]
-    paragraphs=[]
+    new_paragraphs=[]
+
     main=soup.find('div',class_="mw-parser-output")
+
     toc=soup.find('div',class_='toc')
-    #print(main.prettify())
+    """find first chunk i.e all paragraphs above the ToC  """
     first_chunk=toc.find_previous_siblings('p')
     first_chunk.reverse()
+    first_chunk.pop(0)
+    chunks.append(first_chunk)
+    #paragraghs=toc.find_next_siblings('p')
     headings=main.find_all('h2')
     headings.pop(0)
-    headings.pop(-1) #remove references
-    #print(first_chunk)
-    chunks.append(first_chunk)
-    for h in headings:
-        span=h.find('span')
-        if  not span['id']=='External_links':
-            chunks.append(h.find_next_siblings('p'))
-    chunks.pop(-1)
-    chunks.pop(-1)
-    def format_chunks(chunk): 
+    headings.pop(-1)
+    def create_chunk(h):
+        my_chunk=[]
+        def rec(h):
+            p=h.find_next_sibling()
+            if p.name=='p' :
+                my_chunk.append(p)
+                return rec(p)
+            else:
+                return   
+        rec(h)
+
+        chunks.append(my_chunk)
+
+
+
+    def format_chunk(chunk):
         punctuated_chunk=[]   
-        original_chunk=[]    
-        for p in chunk:
-            if (not p.attrs=='class') and len(p.get_text())>2 :
+        original_chunk=[] 
+        if len(chunk) != 0:
+            print(len(chunk)) 
+            for p in chunk:
                 p_text=p.get_text()
                 punctuated=re.sub("\[(.*?)\]",'',p_text) + '\n'
                 original=p_text.casefold().rstrip('\n')        
@@ -69,14 +60,19 @@ def find_chunks(soup):
                 formatted=re.sub("\[(.*?)\]",'',new_o) #remove citations
                 original_chunk.append(formatted.rstrip('\n'))
                 punctuated_chunk.append(punctuated)
+            
+            text=form_string(original_chunk,punctuated_chunk)   
+        else:
+            text=''     
+        return text
 
-        text=form_string(original_chunk,punctuated_chunk)
-        paragraphs.append(text)
-    #print(chunks)
+    for h in headings:
+        create_chunk(h)
+    
     for c in chunks:
-        format_chunks(c)
-    return paragraphs
-
+        new_paragraphs.append(format_chunk(c))  
+        
+    return new_paragraphs
 output=[]
 with open( r'input_file.txt','r',) as i:
     """Read URLs, Scrape the Pages,  """
@@ -84,14 +80,12 @@ with open( r'input_file.txt','r',) as i:
     for url in urls:
         my_url=url.rstrip() #remove '\n' from url
         print(my_url)
-        page=scrape_page(my_url)
-        #print(page.prettify())
-        output.append(find_chunks(page))   
+        page=scrape_page(my_url)   
+        output.append(find_chunks(page))
 
-
+#print(len(output))
 
 
 with open(r"output.txt",'w',encoding='utf-8') as f:
-     for item in output:
-         for text in item:
-             f.write(text)        
+    for i in output:
+        f.write(''.join(i))
