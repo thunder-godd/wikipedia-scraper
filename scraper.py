@@ -31,7 +31,9 @@ def find_chunks(soup):
     #paragraghs=toc.find_next_siblings('p')
     headings=main.find_all('h2')
     headings.pop(0)
-    headings.pop(-1)
+    headings.pop(-1)#remove reference heading
+
+
     def create_chunk(h):
         my_chunk=[]
         def rec(h):
@@ -48,16 +50,17 @@ def find_chunks(soup):
 
 
     def format_chunk(chunk):
+        """ Formats individual paragraphs,remove newlines,punctuation and """
         punctuated_chunk=[]   
         original_chunk=[] 
         if len(chunk) != 0:
-            print(len(chunk)) 
+     
             for p in chunk:
                 p_text=p.get_text()
-                punctuated=re.sub("\[(.*?)\]",'',p_text) + '\n'
+                punctuated=re.sub(r"\[(.*?)\]",'',p_text) + '\n'
                 original=p_text.casefold().rstrip('\n')        
                 new_o=re.sub(r'[^\w\s]', '',original) #remove punctuation
-                formatted=re.sub("\[(.*?)\]",'',new_o) #remove citations
+                formatted=re.sub(r'\([^)]*\)','',new_o) #remove citations
                 original_chunk.append(formatted.rstrip('\n'))
                 punctuated_chunk.append(punctuated)
             
