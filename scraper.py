@@ -57,10 +57,9 @@ def find_chunks(soup):
      
             for p in chunk:
                 p_text=p.get_text()
-                punctuated=re.sub(r"\[(.*?)\]",'',p_text) + '\n'
-                original=p_text.casefold().rstrip('\n')        
-                new_o=re.sub(r'[^\w\s]', '',original) #remove punctuation
-                formatted=re.sub(r'\([^)]*\)','',new_o) #remove citations
+                punctuated=re.sub(r"\[(.*?)\]",'',p_text) + '\n' #remove citations
+                original=punctuated.casefold().rstrip('\n')        
+                formatted=re.sub(r'[^\w\s]', '',original) #remove punctuation
                 original_chunk.append(formatted.rstrip('\n'))
                 punctuated_chunk.append(punctuated)
             
