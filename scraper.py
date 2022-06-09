@@ -12,7 +12,7 @@ def scrape_page(page_url):
     return soup
 
 def form_string(str1,str2):
-    """ Forms the output string """   
+    """ Forms the output string for each chunk"""   
     return  "[Original]: " +''.join(str1)+'\n' +"[Punctuated]: "+''.join(str2).rstrip('\n')+ " ###" +"\n" + "<|endoftext|> "+"\n\n" 
 
 def find_chunks(soup):
@@ -30,7 +30,7 @@ def find_chunks(soup):
     chunks.append(first_chunk)
     #paragraghs=toc.find_next_siblings('p')
     headings=main.find_all('h2')
-    headings.pop(0)
+    headings.pop(0)#remove toc headinng
     headings.pop(-1)#remove reference heading
 
 
@@ -50,7 +50,7 @@ def find_chunks(soup):
 
 
     def format_chunk(chunk):
-        """ Formats individual paragraphs,remove newlines,punctuation and """
+        """ Formats individual paragraphs,remove newlines,punctuation and citations"""
         punctuated_chunk=[]   
         original_chunk=[] 
         if len(chunk) != 0:
